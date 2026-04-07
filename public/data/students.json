@@ -1,0 +1,18 @@
+[
+  {
+    "id": "1",
+    "name": "John Doe",
+    "regNo": "CSE-2022-26-001",
+    "photo": "/images/students/john.jpg",
+    "quote": "Coding is the poetry of logic.",
+    "instagram": "@johndoe"
+  },
+  {
+    "id": "2",
+    "name": "Jane Smith",
+    "regNo": "CSE-2022-26-002",
+    "photo": "/images/students/jane.jpg",
+    "quote": "Building the future, one byte at a time.",
+    "instagram": "@janesmith"
+  }
+]
