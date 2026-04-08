@@ -1,32 +1,25 @@
 import React from "react";
 import ArchiveGrid from "@/components/sections/ArchiveGrid";
 import Link from "next/link";
-import { headers } from "next/headers";
-
-async function getMemories() {
-  // Use the local API directly on the server to save a network hop
-  // Or fetch from the API route (Next.js optimizes this)
-  const host = headers().get("host");
-  const protocol = process.env.NODE_ENV === "development" ? "http" : "https";
-  const res = await fetch(`${protocol}://${host}/api/memories`, {
-    next: { revalidate: 3600 }
-  });
-  if (!res.ok) return [];
-  return res.json();
-}
+import { getMemoriesInternal } from "@/lib/memories";
+import fs from "fs";
+import path from "path";
 
 async function getQuotes() {
-  const host = headers().get("host");
-  const protocol = process.env.NODE_ENV === "development" ? "http" : "https";
-  const res = await fetch(`${protocol}://${host}/data/quotes.json`);
-  if (!res.ok) return [];
-  return res.json();
+  try {
+    const filePath = path.join(process.cwd(), "public", "data", "quotes.json");
+    const fileContent = fs.readFileSync(filePath, "utf8");
+    return JSON.parse(fileContent);
+  } catch (error) {
+    console.error("Archive Page: Failed to read quotes.json from filesystem", error);
+    return [];
+  }
 }
 
 export default async function ArchivePage() {
   // Fetch data in parallel on the server
   const [memories, quotes] = await Promise.all([
-    getMemories(),
+    getMemoriesInternal(),
     getQuotes()
   ]);
 
