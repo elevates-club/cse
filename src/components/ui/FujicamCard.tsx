@@ -22,11 +22,12 @@ export default function FujicamCard({ src, index, rotation, quote, date, priorit
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.9, rotate: 0 }}
-      whileInView={{ 
+      animate={priority ? { opacity: 1, scale: 1, rotate: randomRotation } : undefined}
+      whileInView={!priority ? { 
         opacity: 1, 
         scale: 1, 
         rotate: randomRotation,
-      }}
+      } : undefined}
       viewport={{ once: true }}
       transition={{ 
         type: "spring", 
@@ -53,14 +54,18 @@ export default function FujicamCard({ src, index, rotation, quote, date, priorit
       {/* The Image Wrapper */}
       <div className="relative aspect-square w-full overflow-hidden bg-[#1a1a1a] shadow-[inset_0_0_25px_rgba(0,0,0,0.9)]">
         <Image
+          loader={({ src, width }) => {
+            if (src.startsWith('/api/memories/image')) {
+              return `${src}&w=${width}`;
+            }
+            return src;
+          }}
           src={src}
           alt="Vintage Memory"
           fill
-          unoptimized={true}
-          crossOrigin="anonymous"
           priority={priority}
           className="object-cover sepia-[0.15] contrast-[1.1] brightness-[0.95] grayscale-[0.1] transition-all duration-700 group-hover:brightness-105 group-hover:sepia-0"
-          sizes="(max-w-768px) 200px, 280px"
+          sizes="(max-w-768px) 400px, 800px"
         />
         {/* Physical textures: grain, dust, and scratches */}
         <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/micro-carbon.png')] opacity-20 pointer-events-none" />
@@ -69,8 +74,8 @@ export default function FujicamCard({ src, index, rotation, quote, date, priorit
       
       {/* Date in top white area of the frame */}
       {date && (
-        <div className="absolute top-1 right-3 w-max rotate-2 select-none z-30">
-          <span className="font-handwriting text-[9px] md:text-[11px] text-black/60 leading-none">
+        <div className="absolute top-0.5 right-2 w-max rotate-1 select-none z-30">
+          <span className="font-handwriting text-[10px] md:text-xs text-black font-medium leading-none">
              {date}
           </span>
         </div>

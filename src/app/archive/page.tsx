@@ -1,76 +1,42 @@
-"use client";
-
-import React, { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import FujicamCard from "@/components/ui/FujicamCard";
+import React from "react";
+import ArchiveGrid from "@/components/sections/ArchiveGrid";
 import Link from "next/link";
+import { headers } from "next/headers";
 
-interface Memory {
-  id: string;
-  src: string;
-  year: string;
-  date?: string;
+async function getMemories() {
+  // Use the local API directly on the server to save a network hop
+  // Or fetch from the API route (Next.js optimizes this)
+  const host = headers().get("host");
+  const protocol = process.env.NODE_ENV === "development" ? "http" : "https";
+  const res = await fetch(`${protocol}://${host}/api/memories`, {
+    next: { revalidate: 3600 }
+  });
+  if (!res.ok) return [];
+  return res.json();
 }
 
-interface Quote {
-  id: string;
-  text: string;
-  author: string;
+async function getQuotes() {
+  const host = headers().get("host");
+  const protocol = process.env.NODE_ENV === "development" ? "http" : "https";
+  const res = await fetch(`${protocol}://${host}/data/quotes.json`);
+  if (!res.ok) return [];
+  return res.json();
 }
 
-export default function ArchivePage() {
-  const [items, setItems] = useState<{ memory: Memory; quote: Quote; rotation: number }[]>([]);
-  const [isLoaded, setIsLoaded] = useState(false);
-  const [visibleCount, setVisibleCount] = useState(12);
-  const [isBatchLoading, setIsBatchLoading] = useState(false);
+export default async function ArchivePage() {
+  // Fetch data in parallel on the server
+  const [memories, quotes] = await Promise.all([
+    getMemories(),
+    getQuotes()
+  ]);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch("/api/memories");
-        const memories = await response.json();
-        
-        const [quotesRes] = await Promise.all([
-          fetch("/data/quotes.json"),
-        ]);
-        const quotes: Quote[] = await quotesRes.json();
-
-        // Defensive check: If no memories are returned or data is invalid, set combined to empty
-        if (!Array.isArray(memories) || memories.length === 0) {
-          console.log("No memories found from Drive API.");
-          setItems([]);
-          setIsLoaded(true);
-          return;
-        }
-
-        // Already sorted chronologically by the API
-        const shuffledQuotes = [...quotes].sort(() => Math.random() - 0.5);
-
-        // Pair them up with dynamic dates
-        const combined = memories.map((memory: any, i: number) => ({
-          memory,
-          quote: shuffledQuotes[i % shuffledQuotes.length],
-          rotation: Math.random() * 20 - 10,
-        }));
-
-        setItems(combined);
-        setIsLoaded(true);
-      } catch (error) {
-        console.error("Failed to load archive data:", error);
-      }
-    };
-
-    fetchData();
-  }, []);
-
-  if (!isLoaded) return (
-    <div className="min-h-screen bg-primary flex items-center justify-center">
-      <div className="flex flex-col items-center gap-4">
-        <div className="w-12 h-12 border-2 border-gold/20 border-t-gold rounded-full animate-spin" />
-        <span className="text-gold font-body text-[10px] uppercase tracking-[0.4em]">Entering the Sanctuary...</span>
-      </div>
-    </div>
-  );
+  // Perform shuffling and rotation on the server to prevent hydration errors
+  const shuffledQuotes = [...quotes].sort(() => 0.5 - Math.random());
+  const items = memories.map((memory: any, i: number) => ({
+    memory,
+    quote: shuffledQuotes[i % shuffledQuotes.length],
+    rotation: Math.random() * 20 - 10,
+  }));
 
   return (
     <main className="min-h-screen bg-[#0a0a0a] py-32 px-6 overflow-x-hidden relative selection:bg-gold/30">
@@ -93,71 +59,7 @@ export default function ArchivePage() {
         </div>
       </div>
 
-      <div className="max-w-[1400px] mx-auto relative z-20">
-        <div className="flex flex-col items-center mb-16 md:mb-32 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="inline-block px-4 py-1 mb-4 md:mb-6 rounded-full border border-gold/20 bg-gold/5"
-          >
-            <span className="text-gold font-body text-[8px] md:text-[9px] uppercase tracking-[0.6em]">Archived Legacies</span>
-          </motion.div>
-          <h2 className="font-display text-4xl md:text-8xl mb-6 md:mb-8 bg-gradient-to-b from-white via-white to-white/20 bg-clip-text text-transparent italic">
-            Fragments of Us
-          </h2>
-          <p className="text-muted text-[10px] md:text-sm max-w-[280px] md:max-w-md font-body leading-relaxed opacity-60">
-            A scattered collection of physical-style Polaroid prints. 
-            Scroll carefully—these are the fragments of a shared journey.
-          </p>
-        </div>
-        
-        {/* Immersive Scattered Tabletop Layout */}
-        <div className="relative flex flex-wrap justify-center gap-x-4 gap-y-12 md:gap-x-24 md:gap-y-40 pb-24 px-2">
-          {items.slice(0, visibleCount).map((item, index) => (
-            <div key={item.memory.id} className="relative group">
-              {/* Secondary Scattered Quote Beside the Card */}
-              <motion.div
-                initial={{ opacity: 0, x: -10 }}
-                whileInView={{ opacity: 0.25, x: 0 }}
-                transition={{ delay: 0.8 + (index % 8) * 0.1 }}
-                viewport={{ once: true }}
-                className="absolute -top-12 -left-12 md:-top-20 md:-left-16 max-w-[120px] md:max-w-[160px] z-0 pointer-events-none group-hover:opacity-60 transition-opacity"
-              >
-                <p className="font-handwriting text-sm md:text-lg text-gold/60 leading-tight -rotate-6 select-none line-clamp-3">
-                  &quot;{item.quote.text.substring(0, 35)}...&quot;
-                </p>
-              </motion.div>
-
-              <FujicamCard 
-                src={item.memory.src} 
-                index={index % 8} 
-                rotation={item.rotation}
-                quote={item.quote.text}
-                date={item.memory.date}
-                priority={index < 4}
-                className="hover:shadow-[0_40px_80px_rgba(245,197,24,0.15)]"
-              />
-              
-              {/* Interactive Decoration: Scrapbook Sticker */}
-              <div className="absolute -bottom-4 -right-4 w-12 h-12 bg-white/5 border border-white/10 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all rotate-12 backdrop-blur-md">
-                <span className="text-xs text-gold font-display">CS</span>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Load More Anchor */}
-        {visibleCount < items.length && (
-          <div className="flex flex-col items-center justify-center py-12">
-            <button 
-              onClick={() => setVisibleCount(prev => prev + 12)}
-              className="px-8 py-3 rounded-full border border-gold/20 text-gold text-[10px] uppercase tracking-[0.4em] hover:bg-gold/5 hover:border-gold/50 transition-all active:scale-95"
-            >
-               {isBatchLoading ? "Opening the boxes..." : "View More Memories"}
-            </button>
-          </div>
-        )}
-      </div>
+      <ArchiveGrid items={items} />
 
        {/* Ambient Subtle Return */}
        <div className="mt-32 text-center pb-24 relative z-20">
