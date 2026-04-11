@@ -72,20 +72,11 @@ export default function FujicamCard({ src, index, rotation, quote, date, priorit
         <div className="absolute inset-0 bg-gradient-to-tr from-black/10 via-transparent to-white/5 pointer-events-none" />
       </div>
       
-      {/* Date in top white area of the frame */}
-      {date && (
-        <div className="absolute top-0.5 right-2 w-max rotate-1 select-none z-30">
-          <span className="font-handwriting text-[10px] md:text-xs text-black font-medium leading-none">
-             {date}
-          </span>
-        </div>
-      )}
-      
-      {/* Handwritten Quote and Date inside the Polaroid "Chin" */}
-      <div className="absolute bottom-1 md:bottom-2 left-0 w-full px-3 md:px-4 flex flex-col items-center justify-center min-h-[40px]">
-        {quote && (
-          <p className="font-handwriting text-[#2c2b29]/80 text-sm md:text-base leading-tight line-clamp-2 text-center">
-            {quote}
+      {/* Polaroid "Chin" — date as caption */}
+      <div className="absolute bottom-1 md:bottom-2 left-0 w-full px-3 md:px-4 flex items-center justify-center min-h-[40px]">
+        {date && (
+          <p className="font-handwriting text-[#2c2b29]/80 text-sm md:text-base leading-tight text-center">
+            {date}
           </p>
         )}
       </div>

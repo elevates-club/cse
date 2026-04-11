@@ -14,8 +14,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const response = await fetch(googleImageUrl, {
-      cache: "force-cache", // Cache images on the server layer for speed
-      next: { revalidate: 86400 } // Revalidate once a day
+      next: { revalidate: 86400 } // cache individual images for 24h (they never change)
     });
 
     if (!response.ok) {
